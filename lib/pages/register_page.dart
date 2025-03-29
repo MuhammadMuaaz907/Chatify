@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../services/media_service.dart';
 import '../services/cloud_storage_service.dart';
 import '../services/database_service.dart';
+import '../services/navigation_service.dart';
 
 //Widgets
 import '../widgets/custom_form_feilds.dart';
@@ -30,7 +31,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   late AuthenticationProvider _auth;
   late DatabaseService _db;
-  late CloudStorageService _cloudStrorageService;
+  late CloudStorageService _cloudStorage;
+  late NavigationService _navigation;
 
   String? _email;
   String? _password;
@@ -44,7 +46,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     _auth = Provider.of<AuthenticationProvider>(context);
     _db = GetIt.instance.get<DatabaseService>();
-    _cloudStrorageService = GetIt.instance.get<CloudStorageService>();
+    _cloudStorage = GetIt.instance.get<CloudStorageService>();
+    _navigation = GetIt.instance.get<NavigationService>();
     _deviceHeight = MediaQuery.of(context).size.height;
     _deviceWidth = MediaQuery.of(context).size.width;
     return _buildUI();
@@ -156,7 +159,24 @@ class _RegisterPageState extends State<RegisterPage> {
       name: "Register",
       height: _deviceHeight * 0.065,
       width: _deviceWidth * 0.65,
-      onPressed: () {},
+      onPressed: () async {
+        if (_registerFormKey.currentState!.validate() &&
+            _profileImage != null) {
+          _registerFormKey.currentState!.save();
+          String? _uid = await _auth.registerUserUsingEmailAndPassword(
+            _email!,
+            _password!,
+          );
+          String? _imageURL = await _cloudStorage.saveUserImageToStorage(
+            _uid!,
+            _profileImage!,
+          );
+          await _db.createUser(_uid, _email!, _name!, _imageURL!);
+          //_navigation.goBack();
+          await _auth.logout();
+          await _auth.loginUsingEmailAndPassword(_email!, _password!);
+        }
+      },
     );
   }
 }
