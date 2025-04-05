@@ -28,22 +28,31 @@ class AuthenticationProvider extends ChangeNotifier {
       if (_user != null) {
         _databaseService.updateUserLastSeenTime(_user.uid);
         _databaseService.getUser(_user.uid).then((_snapshot) {
-          Map<String, dynamic> _userData =
-              _snapshot.data()! as Map<String, dynamic>;
-
-          user = ChatUser.fromJSON({
-            "uid": _user.uid,
-            "name": _userData["name"],
-            "email": _userData["email"],
-            "lastActive": _userData["lastActive"],
-            "image": _userData["image"],
-          });
-          _navigationService.removeAndNavigateToRoute('/home');
+          if (_snapshot.exists && _snapshot.data() != null) {
+            Map<String, dynamic> _userData = _snapshot.data()! as Map<String, dynamic>;
+            
+            print("User JSON: $_userData"); // Debugging
+            
+            user = ChatUser.fromJSON({
+              "uid": _user.uid,
+              "name": _userData["name"] ?? "Guest",
+              "email": _userData["email"] ?? "",
+              "last_active": _userData["last_active"],
+              "image": _userData["image"] ?? "",
+            });
+            _navigationService.removeAndNavigateToRoute('/home');
+          } else {
+            print("User data is null or doesn't exist");
+            _navigationService.removeAndNavigateToRoute('/login');
+          }
+        }).catchError((error) {
+          print("Error fetching user data: $error");
         });
       } else {
         _navigationService.removeAndNavigateToRoute('/login');
       }
     });
+    print(FirebaseAuth.instance.currentUser?.uid);
   }
 
   Future<void> loginUsingEmailAndPassword(
