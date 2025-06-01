@@ -38,7 +38,7 @@ class _SplashPageState extends State<SplashPage> {
       debugShowCheckedModeBanner: false,
       title: 'Chatify',
       theme: ThemeData(
-        scaffoldBackgroundColor: Color.fromRGBO(255, 255, 255, 1),
+        scaffoldBackgroundColor: Color.fromRGBO(36, 35, 49, 1.0),
       ),
       home: Scaffold(
         body: Center(
@@ -48,7 +48,7 @@ class _SplashPageState extends State<SplashPage> {
             decoration: BoxDecoration(
               image: DecorationImage(
                 fit: BoxFit.contain,
-                image: AssetImage('assests/images/logo1.jpg'),
+                image: AssetImage('assests/images/logo.png'),
               ),
             ),
           ),
