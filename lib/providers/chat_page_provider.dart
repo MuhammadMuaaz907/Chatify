@@ -1,86 +1,140 @@
 import 'dart:async';
-import 'dart:math';
 
 //Packages
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:provider/provider.dart';
 
 //Services
 import '../services/database_service.dart';
+import '../services/cloud_storage_service.dart';
+import '../services/media_service.dart';
+import '../services/navigation_service.dart';
 
 //Providers
 import '../providers/authentication_provider.dart';
 
 //Models
-import '../models/chat.dart';
 import '../models/chat_message.dart';
-import '../models/chat_user.dart';
 
-class ChatsPageProvider extends ChangeNotifier {
-  AuthenticationProvider _auth;
-
+class ChatPageProvider extends ChangeNotifier {
   late DatabaseService _db;
+  late CloudStorageService _storage;
+  late MediaService _media;
+  late NavigationService _navigation;
 
-  List<Chat>? chats;
+  AuthenticationProvider _auth;
+  ScrollController _messagesListViewController;
 
-  late StreamSubscription _chatsStream;
+  String _chatId;
+  List<ChatMessage>? messages;
 
-  ChatsPageProvider(this._auth) {
-    _db = GetIt.instance.get<DatabaseService>();
-    getChats();
+  late StreamSubscription _messagesStream;
+  late StreamSubscription _keyboardVisibilityStream;
+  late KeyboardVisibilityController _keyboardVisibilityController;
+
+  String? _message;
+
+  String get message {
+    return message;
   }
 
-  @override
+  void set message(String _value) {
+    _message = _value;
+  }
+
+  ChatPageProvider(this._chatId, this._auth, this._messagesListViewController) {
+    _db = GetIt.instance.get<DatabaseService>();
+    _storage = GetIt.instance.get<CloudStorageService>();
+    _media = GetIt.instance.get<MediaService>();
+    _navigation = GetIt.instance.get<NavigationService>();
+    _keyboardVisibilityController = KeyboardVisibilityController();
+    listenToMessages();
+    listenToKeyboardChanges();
+  }
+
   void dispose() {
-    _chatsStream.cancel();
+    _messagesStream.cancel();
     super.dispose();
   }
 
-  void getChats() async {
+  void listenToMessages() {
     try {
-      _chatsStream = _db.getChatsForUser(_auth.user.uid).listen((
-        _snapshot,
-      ) async {
-        chats = await Future.wait(
-          _snapshot.docs.map((_d) async {
-            Map<String, dynamic> _chatData = _d.data() as Map<String, dynamic>;
-            //Get Users in Chat
-            List<ChatUser> _members = [];
-            for (var _uid in _chatData["members"]) {
-              DocumentSnapshot _userSnapshot = await _db.getUser(_uid);
-              Map<String, dynamic> _userData =
-                  _userSnapshot.data() as Map<String, dynamic>;
-              _userData["uid"] = _userSnapshot.id;
-              _members.add(ChatUser.fromJSON(_userData));
-            }
-            //Get last message for chat
-            List<ChatMessage> _messages = [];
-            QuerySnapshot _chatMessage = await _db.getLastMessageForChat(_d.id);
-            if (_chatMessage.docs.isNotEmpty) {
+      _messagesStream = _db.streamMessagesForChat(_chatId).listen((_snapshot) {
+        List<ChatMessage> _messages =
+            _snapshot.docs.map((_m) {
               Map<String, dynamic> _messageData =
-                  _chatMessage.docs.first.data()! as Map<String, dynamic>;
-              ChatMessage _message = ChatMessage.fromJSON(_messageData);
-              _messages.add(_message);
-            }
-
-            //Return Chat Instance
-            return Chat(
-              uid: _d.id,
-              currentUserUid: _auth.user.uid,
-              members: _members,
-              messages: _messages,
-              activity: _chatData["is_activity"],
-              group: _chatData["is_group"],
-            );
-          }).toList(),
-        );
+                  _m.data() as Map<String, dynamic>;
+              return ChatMessage.fromJSON(_messageData);
+            }).toList();
+        messages = _messages;
         notifyListeners();
+        WidgetsBinding.instance!.addPostFrameCallback((_) {
+          if (_messagesListViewController.hasClients) {
+            _messagesListViewController.jumpTo(
+              _messagesListViewController.position.maxScrollExtent,
+            );
+          }
+        });
       });
     } catch (e) {
+      print("Error Getting Messages");
       print(e);
-      print("Error getting chat");
     }
+  }
+
+  void listenToKeyboardChanges() {
+    _keyboardVisibilityStream = _keyboardVisibilityController.onChange.listen((
+      _event,
+    ) {
+      _db.UpdateChatData(_chatId, {"is_activity": _event});
+    });
+  }
+
+  void sendTextMessage() {
+    if (_message != null) {
+      ChatMessage _messageToSend = ChatMessage(
+        content: _message!,
+        type: MessageType.TEXT,
+        senderID: _auth.user.uid,
+        sentTime: DateTime.now(),
+      );
+      _db.addMessageToChat(_chatId, _messageToSend);
+    }
+  }
+
+  void sendImageMessage() async {
+    try {
+      PlatformFile? _file = await _media.pickImageFromLibrary();
+      if (_file != null) {
+        String? _downloadURL = await _storage.SavedChatImageToStorage(
+          _chatId,
+          _auth.user.uid,
+          _file,
+        );
+        ChatMessage _messageToSend = ChatMessage(
+          content: _downloadURL!,
+          type: MessageType.IMAGE,
+          senderID: _auth.user.uid,
+          sentTime: DateTime.now(),
+        );
+        _db.addMessageToChat(_chatId, _messageToSend);
+      }
+    } catch (e) {
+      print("Error ending Image Message");
+      print(e);
+    }
+  }
+
+  void deleteChat() {
+    goBack();
+    _db.deleteChat(_chatId);
+  }
+
+  void goBack() {
+    _navigation.goBack();
   }
 }

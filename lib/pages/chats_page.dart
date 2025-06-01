@@ -5,7 +5,13 @@ import 'package:get_it/get_it.dart';
 
 //Providers
 import '../providers/authentication_provider.dart';
-import '../providers/chat_page_provider.dart';
+import '../providers/chats_page_provider.dart';
+
+//Services
+import '../services/navigation_service.dart';
+
+//Pages
+import '../pages/chat_page.dart';
 
 //Widgets
 import '../widgets/top_bar.dart';
@@ -28,12 +34,14 @@ class _ChatsPageState extends State<ChatsPage> {
   late double _deviceWidth;
 
   late AuthenticationProvider _auth;
+  late NavigationService _navigation;
   late ChatsPageProvider _pageProvider;
   @override
   Widget build(BuildContext context) {
     _deviceHeight = MediaQuery.of(context).size.height;
     _deviceWidth = MediaQuery.of(context).size.width;
     _auth = Provider.of<AuthenticationProvider>(context);
+    _navigation = GetIt.instance.get<NavigationService>();
 
     return MultiProvider(
       providers: [
@@ -121,14 +129,16 @@ class _ChatsPageState extends State<ChatsPage> {
               ? "Media Attachment"
               : _chat.messages.first.content;
     }
-    return CustomListViewTilesWithActivity(
+    return CustomListViewTileWithActivity(
       height: _deviceHeight * 0.10,
       title: _chat.title(),
       subtitle: _subtitleText,
       imagePath: _chat.imageURL(),
       isActive: _isActive,
       isActivity: _chat.activity,
-      onTap: () {},
+      onTap: () {
+        _navigation.navigateToPage(ChatPage(chat: _chat));
+      },
     );
   }
 }

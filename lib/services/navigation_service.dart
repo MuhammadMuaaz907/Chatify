@@ -11,7 +11,7 @@ class NavigationService {
     navigatorkey.currentState?.pushNamed(route);
   }
 
-  void naviagteToPage(Widget page) {
+  void navigateToPage(Widget page) {
     navigatorkey.currentState?.push(
       MaterialPageRoute(
         builder: (BuildContext context) {
