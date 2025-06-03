@@ -20,6 +20,8 @@ import '../providers/authentication_provider.dart';
 //Models
 import '../models/chat_message.dart';
 
+const String CHAT_COLLECTION = "Chats";
+
 class ChatPageProvider extends ChangeNotifier {
   late DatabaseService _db;
   late CloudStorageService _storage;
@@ -39,11 +41,12 @@ class ChatPageProvider extends ChangeNotifier {
   String? _message;
 
   String get message {
-    return message;
+    return _message ?? "";
   }
 
   void set message(String _value) {
     _message = _value;
+    notifyListeners();
   }
 
   ChatPageProvider(this._chatId, this._auth, this._messagesListViewController) {
@@ -52,13 +55,36 @@ class ChatPageProvider extends ChangeNotifier {
     _media = GetIt.instance.get<MediaService>();
     _navigation = GetIt.instance.get<NavigationService>();
     _keyboardVisibilityController = KeyboardVisibilityController();
-    listenToMessages();
-    listenToKeyboardChanges();
+    initializeChat();
   }
 
+  @override
   void dispose() {
     _messagesStream.cancel();
+    _keyboardVisibilityStream.cancel();
     super.dispose();
+  }
+
+  Future<void> initializeChat() async {
+    DocumentSnapshot chatSnapshot = await FirebaseFirestore.instance.collection(CHAT_COLLECTION).doc(_chatId).get();
+    if (!chatSnapshot.exists) {
+      _navigation.goBack();
+      return;
+    }
+    Map<String, dynamic> chatData = chatSnapshot.data() as Map<String, dynamic>;
+    List<String> members = List<String>.from(chatData["members"]);
+    List<String> userFriends = await _db.getFriends(_auth.user.uid);
+    for (String memberId in members) {
+      if (memberId != _auth.user.uid && !userFriends.contains(memberId)) {
+        _navigation.goBack();
+        ScaffoldMessenger.of(NavigationService.navigatorkey.currentContext!).showSnackBar(
+          SnackBar(content: Text("You can only chat with friends!")),
+        );
+        return;
+      }
+    }
+    listenToMessages();
+    listenToKeyboardChanges();
   }
 
   void listenToMessages() {
@@ -95,7 +121,7 @@ class ChatPageProvider extends ChangeNotifier {
   }
 
   void sendTextMessage() {
-    if (_message != null) {
+    if (_message != null && _message!.isNotEmpty) {
       ChatMessage _messageToSend = ChatMessage(
         content: _message!,
         type: MessageType.TEXT,
@@ -103,6 +129,8 @@ class ChatPageProvider extends ChangeNotifier {
         sentTime: DateTime.now(),
       );
       _db.addMessageToChat(_chatId, _messageToSend);
+      _message = null;
+      notifyListeners();
     }
   }
 
@@ -124,8 +152,19 @@ class ChatPageProvider extends ChangeNotifier {
         _db.addMessageToChat(_chatId, _messageToSend);
       }
     } catch (e) {
-      print("Error ending Image Message");
+      print("Error sending Image Message");
       print(e);
+    }
+  }
+
+  Future<bool> unfriendUser(String friendId) async {
+    try {
+      await _db.unfriendUser(_auth.user.uid, friendId);
+      goBack(); // Redirect after unfriending
+      return true;
+    } catch (e) {
+      print("Error unfriending user: $e");
+      return false;
     }
   }
 

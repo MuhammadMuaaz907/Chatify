@@ -43,13 +43,18 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final TextEditingController controller;
   IconData? icon;
+  final Color? fillColor; // Added
+  final double? borderRadius; // Added
 
-  CustomTextField(
-      {required this.onEditingComplete,
-      required this.hintText,
-      required this.obscureText,
-      required this.controller,
-      this.icon});
+  CustomTextField({
+    required this.onEditingComplete,
+    required this.hintText,
+    required this.obscureText,
+    required this.controller,
+    this.icon,
+    this.fillColor, // Optional
+    this.borderRadius, // Optional
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -57,13 +62,13 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       onEditingComplete: () => onEditingComplete(controller.value.text),
       cursorColor: Colors.white,
-      style: TextStyle(color: Colors.white), 
+      style: TextStyle(color: Colors.white),
       obscureText: obscureText,
       decoration: InputDecoration(
-        fillColor: Color.fromRGBO(30, 29, 37, 1.0),
+        fillColor: fillColor ?? Color.fromRGBO(30, 29, 37, 1.0), // Use provided or default
         filled: true,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
+          borderRadius: BorderRadius.circular(borderRadius ?? 10.0), // Use provided or default
           borderSide: BorderSide.none,
         ),
         hintText: hintText,
@@ -72,4 +77,4 @@ class CustomTextField extends StatelessWidget {
       ),
     );
   }
-} 
+}

@@ -8,6 +8,7 @@ class Chat {
   final bool group;
   final List<ChatUser> members;
   List<ChatMessage> messages;
+  final String? groupName; // Added for group chat name
 
   late final List<ChatUser> _recepients;
 
@@ -18,6 +19,7 @@ class Chat {
     required this.messages,
     required this.activity,
     required this.group,
+    this.groupName,
   }) {
     _recepients = members.where((_i) => _i.uid != currentUserUid).toList();
   }
@@ -27,15 +29,18 @@ class Chat {
   }
 
   String title() {
+    if (group && groupName != null && groupName!.isNotEmpty) {
+      return groupName!; // Return group name if it's a group chat with a set name
+    }
+    // Fallback for group chats without a name or non-group chats
     return !group
-        ? _recepients.first.name
+        ? (_recepients.isNotEmpty ? _recepients.first.name : "Unknown")
         : _recepients.map((_user) => _user.name).join(", ");
   }
 
   String imageURL() {
     return !group
-        ? _recepients.first.imageURL
+        ? (_recepients.isNotEmpty ? _recepients.first.imageURL : "https://i.pravatar.cc/150?img=1")
         : "https://i.pravatar.cc/150?img=3";
   }
-  
 }

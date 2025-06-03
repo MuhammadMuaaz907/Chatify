@@ -1,9 +1,7 @@
-//Packages
 import 'package:flutter/material.dart';
-
-//Pages
 import '../pages/chats_page.dart';
 import '../pages/users_page.dart';
+import '../pages/friend_requests_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -17,14 +15,11 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     ChatsPage(),
     UsersPage(),
+    FriendRequestsPage(), // Added FriendRequestsPage
   ];
 
   @override
   Widget build(BuildContext context) {
-    return _buildUI();
-  }
-
-  Widget _buildUI() {
     return Scaffold(
       body: _pages[_currentPage],
       bottomNavigationBar: BottomNavigationBar(
@@ -34,6 +29,11 @@ class _HomePageState extends State<HomePage> {
             _currentPage = _index;
           });
         },
+        backgroundColor: Colors.teal,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey[300],
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
             label: "Chats",
@@ -42,6 +42,10 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(
             label: "Users",
             icon: Icon(Icons.supervised_user_circle_sharp),
+          ),
+          BottomNavigationBarItem(
+            label: "Friend Requests", // New tab for friend requests
+            icon: Icon(Icons.person_add_alt_1), // Icon for friend requests
           ),
         ],
       ),

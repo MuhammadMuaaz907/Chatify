@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
-
-//Packages
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:provider/provider.dart';
-
-//Services
 import './services/navigation_service.dart';
-
-//pages
 import './pages/splash_page.dart';
 import './pages/login_page.dart';
 import './pages/register_page.dart';
 import './pages/home_page.dart';
-
-//Providers
+import './pages/friend_requests_page.dart';
 import './providers/authentication_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(
     SplashPage(
       key: UniqueKey(),
-      oninitializationcomplete: () {
-        runApp(MainApp());
-      },
+      oninitializationcomplete: _navigateToMainApp,
     ),
   );
+}
+
+void _navigateToMainApp() {
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
@@ -35,18 +33,24 @@ class MainApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthenticationProvider>(
-          create: (BuildContext _context) {
-            return AuthenticationProvider();
-          },
+          create: (BuildContext _context) => AuthenticationProvider(),
         ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: "Chatify",
         theme: ThemeData(
-          scaffoldBackgroundColor: Color.fromRGBO(27, 27, 59, 1),
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.teal,
+            secondary: Colors.deepPurple,
+            brightness: Brightness.light,
+          ),
+          scaffoldBackgroundColor: Colors.grey[100],
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            backgroundColor: Color.fromRGBO(30, 29, 37, 1.0),
+            backgroundColor: Colors.teal,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.grey[300],
           ),
         ),
         navigatorKey: NavigationService.navigatorkey,
@@ -55,6 +59,7 @@ class MainApp extends StatelessWidget {
           '/login': (BuildContext _context) => LoginPage(),
           '/register': (BuildContext _context) => RegisterPage(),
           '/home': (BuildContext _context) => HomePage(),
+          '/friendRequests': (context) => FriendRequestsPage(),
         },
       ),
     );

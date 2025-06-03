@@ -1,16 +1,9 @@
-//packages
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
-
-//Widgets
 import '../widgets/custom_form_feilds.dart';
 import '../widgets/rounded_button.dart';
-
-//Providers
 import '../providers/authentication_provider.dart';
-
-//Services
 import '../services/navigation_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -44,72 +37,77 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildUI() {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: _deviceWidth * 0.03,
-          vertical: _deviceHeight * 0.02,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.teal, Colors.deepPurple],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        height: _deviceHeight * 0.98,
-        width: _deviceWidth * 0.97,
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _pageTitle(),
-            SizedBox(height: _deviceHeight * 0.04),
-            _loginForm(),
-            SizedBox(height: _deviceHeight * 0.05),
-            _loginButton(),
-            SizedBox(height: _deviceHeight * 0.02),
-            _registerAccountLink(),
-          ],
+        child: Center(
+          child: SingleChildScrollView(
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: _deviceWidth * 0.03,
+                vertical: _deviceHeight * 0.02,
+              ),
+              width: _deviceWidth * 0.85,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _pageTitle(),
+                  SizedBox(height: _deviceHeight * 0.04),
+                  _loginForm(),
+                  SizedBox(height: _deviceHeight * 0.05),
+                  _loginButton(),
+                  SizedBox(height: _deviceHeight * 0.02),
+                  _registerAccountLink(),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _pageTitle() {
-    return Container(
-      height: _deviceHeight * 0.10,
-      child: Text(
-        'Chatify',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 40,
-          fontWeight: FontWeight.w600,
-        ),
+    return Text(
+      'Chatify',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 50,
+        fontWeight: FontWeight.bold,
+        shadows: [
+          Shadow(color: Colors.black26, offset: Offset(2, 2), blurRadius: 4),
+        ],
       ),
     );
   }
 
   Widget _loginForm() {
     return Container(
-      height: _deviceHeight * 0.18,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Form(
         key: _loginFormKey,
         child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             CustomTextFormFeild(
-              onSaved: (_value) {
-                setState(() {
-                  _email = _value;
-                });
-              },
+              onSaved: (_value) => _email = _value,
               regEx: r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
               hintText: "Email",
               obscureText: false,
             ),
+            SizedBox(height: 15),
             CustomTextFormFeild(
-              onSaved: (_value) {
-                setState(() {
-                  _password = _value;
-                });
-              },
-              regEx:
-                  r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
+              onSaved: (_value) => _password = _value,
+              regEx: r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
               hintText: "Password",
               obscureText: true,
             ),
@@ -124,6 +122,8 @@ class _LoginPageState extends State<LoginPage> {
       name: "Login",
       height: _deviceHeight * 0.065,
       width: _deviceWidth * 0.65,
+      buttonColor: Colors.teal,
+      textColor: Colors.white,
       onPressed: () {
         if (_loginFormKey.currentState!.validate()) {
           _loginFormKey.currentState!.save();
@@ -136,11 +136,9 @@ class _LoginPageState extends State<LoginPage> {
   Widget _registerAccountLink() {
     return GestureDetector(
       onTap: () => _navigation.navigateToRoute('/register'),
-      child: Container(
-        child: Text(
-          'Don\'t have an account?',
-          style: TextStyle(color: Colors.blueAccent),
-        ),
+      child: Text(
+        'Don\'t have an account? Register',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }
