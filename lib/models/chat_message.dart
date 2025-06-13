@@ -29,10 +29,10 @@ class ChatMessage {
     }
 
     return ChatMessage(
-      senderID: _json["sender_id"],
+      senderID: _json["sender_id"] ?? "",
       type: _messageType,
-      content: _json["content"],
-      sentTime: _json["sent_time"].toDate(),
+      content: _json["content"] ?? "",
+      sentTime: (_json["sent_time"] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
@@ -45,8 +45,9 @@ class ChatMessage {
       case MessageType.IMAGE:
         _messageType = "image";
         break;
-      default:
-        _messageType = "";
+      case MessageType.UNKNOWN:
+        _messageType = "unknown"; // Default value for UNKNOWN
+        break;
     }
     return {
       "content": content,

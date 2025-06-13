@@ -32,10 +32,11 @@ class ChatsPageProvider extends ChangeNotifier {
 
   void getChats() async {
     try {
-      _chatsStream = _db.getChatsForUser(_auth.user.uid).listen((
+      if (_auth.user == null || _auth.user?.uid == null) return;
+      _chatsStream = _db.getChatsForUser(_auth.user!.uid).listen((
         _snapshot,
       ) async {
-        chats = await Future.wait(
+        List<Chat> tempChats = await Future.wait(
           _snapshot.docs.map((_d) async {
             Map<String, dynamic> _chatData = _d.data() as Map<String, dynamic>;
             // Get Users in Chat
@@ -60,20 +61,57 @@ class ChatsPageProvider extends ChangeNotifier {
             // Return Chat Instance
             return Chat(
               uid: _d.id,
-              currentUserUid: _auth.user.uid,
+              currentUserUid: _auth.user!.uid,
               members: _members,
               messages: _messages,
               activity: _chatData["is_activity"],
               group: _chatData["is_group"],
-              groupName: _chatData["group_name"], // Fetch group name from Firestore
+              groupName: _chatData["group_name"],
             );
           }).toList(),
         );
+
+        // Sort chats by latest message sentTime (newest first)
+        tempChats.sort((a, b) {
+          DateTime? aSentTime = a.messages.isNotEmpty ? a.messages.first.sentTime : null;
+          DateTime? bSentTime = b.messages.isNotEmpty ? b.messages.first.sentTime : null;
+          if (aSentTime == null && bSentTime == null) return 0;
+          if (aSentTime == null) return 1;
+          if (bSentTime == null) return -1;
+          return bSentTime.compareTo(aSentTime); // Newest first
+        });
+
+        // Filter unique chats based on members
+        Map<String, Chat> uniqueChats = {};
+        for (var chat in tempChats) {
+          // Create a key based on sorted member UIDs (excluding current user for uniqueness)
+          List<String> memberUids = chat.members
+              .where((member) => member.uid != _auth.user!.uid)
+              .map((member) => member.uid)
+              .toList()
+              ..sort();
+          String key = memberUids.join(',');
+          uniqueChats[key] = chat; // Keep the latest chat for this member set
+        }
+        chats = uniqueChats.values.toList();
         notifyListeners();
       });
     } catch (e) {
       print(e);
       print("Error getting chat");
+    }
+  }
+
+  Future<void> deleteChat(String chatId) async {
+    try {
+      await _db.deleteChat(chatId); // Assuming deleteChat method exists
+      // Update local chats list (optional, stream will handle real-time update)
+      if (chats != null) {
+        chats!.removeWhere((chat) => chat.uid == chatId);
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Error deleting chat: $e");
     }
   }
 }

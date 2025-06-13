@@ -99,12 +99,20 @@ class _RegisterPageState extends State<RegisterPage> {
         key: _registerFormKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start, // Align all children to start
           children: [
             CustomTextFormFeild(
               onSaved: (_value) => _name = _value,
               regEx: r'.{3,}',
               hintText: "Name",
               obscureText: false,
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10, top: 4), // Indent and spacing
+              child: Text(
+                "Minimum 3 characters required.",
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
             ),
             SizedBox(height: 15),
             CustomTextFormFeild(
@@ -113,12 +121,26 @@ class _RegisterPageState extends State<RegisterPage> {
               hintText: "Email",
               obscureText: false,
             ),
+            Padding(
+              padding: EdgeInsets.only(left: 10, top: 4), // Indent and spacing
+              child: Text(
+                "Enter a valid email (e.g., example@domain.com).",
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ),
             SizedBox(height: 15),
             CustomTextFormFeild(
               onSaved: (_value) => _password = _value,
               regEx: r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
               hintText: "Password",
               obscureText: true,
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10, top: 4), // Indent and spacing
+              child: Text(
+                "At least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character.",
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
             ),
           ],
         ),

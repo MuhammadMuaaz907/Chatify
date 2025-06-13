@@ -38,9 +38,4 @@ class Chat {
         : _recepients.map((_user) => _user.name).join(", ");
   }
 
-  String imageURL() {
-    return !group
-        ? (_recepients.isNotEmpty ? _recepients.first.imageURL : "https://i.pravatar.cc/150?img=1")
-        : "https://i.pravatar.cc/150?img=3";
-  }
 }

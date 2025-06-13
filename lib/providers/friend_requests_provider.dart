@@ -15,7 +15,8 @@ class FriendRequestsProvider extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> getPendingRequests() async {
     try {
-      return await _database.getPendingFriendRequests(_auth.user.uid);
+      if (_auth.user == null || _auth.user?.uid == null) return [];
+      return await _database.getPendingFriendRequests(_auth.user!.uid);
     } catch (e) {
       print("Error fetching friend requests: $e");
       return [];

@@ -20,7 +20,7 @@ class _UsersPageState extends State<UsersPage> {
   late double _deviceHeight;
   late double _deviceWidth;
 
-  late AuthenticationProvider _auth;
+  AuthenticationProvider? _auth; // Nullable now
   late UsersPageProvider _pageProvider;
 
   final TextEditingController _searchFieldTextEditingController =
@@ -29,29 +29,31 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
-    // _auth initialize nahi kiya yahan, build mein hoga
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_auth == null) {
+      _auth = Provider.of<AuthenticationProvider>(context, listen: false);
+      if (_auth != null) {
+        _pageProvider = Provider.of<UsersPageProvider>(context, listen: false);
+        _pageProvider.getUsers(); // Reload users if authenticated
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     _deviceHeight = MediaQuery.of(context).size.height;
     _deviceWidth = MediaQuery.of(context).size.width;
-    _auth = Provider.of<AuthenticationProvider>(context);
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<UsersPageProvider>(
-          create: (_) => UsersPageProvider(_auth),
-        ),
-      ],
-      child: _buildUI(),
-    );
-  }
-
-  Widget _buildUI() {
-    return Builder(
-      builder: (BuildContext _context) {
-        _pageProvider = _context.watch<UsersPageProvider>();
-        return Container(
+    if (_auth == null) {
+      return Center(child: CircularProgressIndicator(color: Colors.teal));
+    }
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.teal, Colors.deepPurple],
@@ -59,50 +61,47 @@ class _UsersPageState extends State<UsersPage> {
               end: Alignment.bottomRight,
             ),
           ),
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  TopBar(
-                    'Users',
-                    primaryAction: IconButton(
-                      icon: Icon(Icons.logout, color: Colors.white),
-                      onPressed: () => _auth.logout(),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: CustomTextField(
-                      onEditingComplete: (_value) {
-                        _pageProvider.getUsers(name: _value);
-                        FocusScope.of(context).unfocus();
-                      },
-                      hintText: "Search Users...",
-                      obscureText: false,
-                      controller: _searchFieldTextEditingController,
-                      icon: Icons.search,
-                      fillColor: Colors.white.withOpacity(0.1),
-                      borderRadius: 15,
-                    ),
-                  ),
-                  _usersList(),
-                  _createChatButton(),
-                ],
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TopBar(
+                'Users',
+                primaryAction: IconButton(
+                  icon: Icon(Icons.logout, color: Colors.white),
+                  onPressed: () => _auth?.logout() ?? () {},
+                ),
               ),
-            ),
+              Padding(
+                padding: EdgeInsets.all(8),
+                child: CustomTextField(
+                  onEditingComplete: (_value) {
+                    if (_auth != null && _pageProvider != null) {
+                      _pageProvider.getUsers(name: _value);
+                    }
+                    FocusScope.of(context).unfocus();
+                  },
+                  hintText: "Search Users...",
+                  obscureText: false,
+                  controller: _searchFieldTextEditingController,
+                  icon: Icons.search,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  borderRadius: 15,
+                ),
+              ),
+              _usersList(),
+              _createChatButton(),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _usersList() {
     List<ChatUser>? _users = _pageProvider.users;
-    final currentUser = _auth.user;
+    final currentUser = _auth?.user;
 
     if (_users == null) {
       return Center(child: CircularProgressIndicator(color: Colors.white));
@@ -185,26 +184,28 @@ class _UsersPageState extends State<UsersPage> {
                                           color: Colors.teal,
                                         ),
                                         onPressed: () async {
-                                          bool success = await _pageProvider
-                                              .sendFriendRequest(user.uid);
-                                          if (success) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Friend request sent!",
+                                          if (_auth != null && _pageProvider != null) {
+                                            bool success = await _pageProvider
+                                                .sendFriendRequest(user.uid);
+                                            if (success) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    "Friend request sent!",
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Failed to send friend request.",
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    "Failed to send friend request.",
+                                                  ),
                                                 ),
-                                              ),
-                                            );
+                                              );
+                                            }
                                           }
                                         },
                                       ),
@@ -215,26 +216,28 @@ class _UsersPageState extends State<UsersPage> {
                                           color: Colors.orange,
                                         ),
                                         onPressed: () async {
-                                          bool success = await _pageProvider
-                                              .cancelFriendRequest(user.uid);
-                                          if (success) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Friend request canceled!",
+                                          if (_auth != null && _pageProvider != null) {
+                                            bool success = await _pageProvider
+                                                .cancelFriendRequest(user.uid);
+                                            if (success) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    "Friend request canceled!",
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Failed to cancel friend request.",
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    "Failed to cancel friend request.",
+                                                  ),
                                                 ),
-                                              ),
-                                            );
+                                              );
+                                            }
                                           }
                                         },
                                       ),
@@ -245,7 +248,9 @@ class _UsersPageState extends State<UsersPage> {
                                           color: Colors.teal,
                                         ),
                                         onPressed: () {
-                                          _pageProvider.startChatWithFriend(user);
+                                          if (_auth != null && _pageProvider != null) {
+                                            _pageProvider.startChatWithFriend(user);
+                                          }
                                         },
                                       ),
                                   ],
@@ -273,6 +278,7 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Future<String?> _showGroupNameDialog() async {
+    if (_auth == null) return null;
     TextEditingController _groupNameController = TextEditingController();
     return showDialog<String>(
       context: context,
@@ -303,6 +309,7 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   Widget _createChatButton() {
+    if (_auth == null || _pageProvider == null) return SizedBox.shrink();
     return Visibility(
       visible: _pageProvider.selectedUsers.isNotEmpty,
       child: Padding(

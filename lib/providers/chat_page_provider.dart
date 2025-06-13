@@ -66,6 +66,10 @@ class ChatPageProvider extends ChangeNotifier {
   }
 
   Future<void> initializeChat() async {
+    if (_auth.user == null || _auth.user?.uid == null) {
+      _navigation.goBack();
+      return;
+    }
     DocumentSnapshot chatSnapshot = await FirebaseFirestore.instance.collection(CHAT_COLLECTION).doc(_chatId).get();
     if (!chatSnapshot.exists) {
       _navigation.goBack();
@@ -73,9 +77,9 @@ class ChatPageProvider extends ChangeNotifier {
     }
     Map<String, dynamic> chatData = chatSnapshot.data() as Map<String, dynamic>;
     List<String> members = List<String>.from(chatData["members"]);
-    List<String> userFriends = await _db.getFriends(_auth.user.uid);
+    List<String> userFriends = await _db.getFriends(_auth.user!.uid);
     for (String memberId in members) {
-      if (memberId != _auth.user.uid && !userFriends.contains(memberId)) {
+      if (memberId != _auth.user!.uid && !userFriends.contains(memberId)) {
         _navigation.goBack();
         ScaffoldMessenger.of(NavigationService.navigatorkey.currentContext!).showSnackBar(
           SnackBar(content: Text("You can only chat with friends!")),
@@ -121,11 +125,12 @@ class ChatPageProvider extends ChangeNotifier {
   }
 
   void sendTextMessage() {
+    if (_auth.user == null || _auth.user?.uid == null) return;
     if (_message != null && _message!.isNotEmpty) {
       ChatMessage _messageToSend = ChatMessage(
         content: _message!,
         type: MessageType.TEXT,
-        senderID: _auth.user.uid,
+        senderID: _auth.user!.uid,
         sentTime: DateTime.now(),
       );
       _db.addMessageToChat(_chatId, _messageToSend);
@@ -135,18 +140,19 @@ class ChatPageProvider extends ChangeNotifier {
   }
 
   void sendImageMessage() async {
+    if (_auth.user == null || _auth.user?.uid == null) return;
     try {
       PlatformFile? _file = await _media.pickImageFromLibrary();
       if (_file != null) {
         String? _downloadURL = await _storage.SavedChatImageToStorage(
           _chatId,
-          _auth.user.uid,
+          _auth.user!.uid,
           _file,
         );
         ChatMessage _messageToSend = ChatMessage(
           content: _downloadURL!,
           type: MessageType.IMAGE,
-          senderID: _auth.user.uid,
+          senderID: _auth.user!.uid,
           sentTime: DateTime.now(),
         );
         _db.addMessageToChat(_chatId, _messageToSend);
@@ -158,9 +164,10 @@ class ChatPageProvider extends ChangeNotifier {
   }
 
   Future<bool> unfriendUser(String friendId) async {
+    if (_auth.user == null || _auth.user?.uid == null) return false;
     try {
-      await _db.unfriendUser(_auth.user.uid, friendId);
-      goBack(); // Redirect after unfriending
+      await _db.unfriendUser(_auth.user!.uid, friendId);
+      goBack();
       return true;
     } catch (e) {
       print("Error unfriending user: $e");

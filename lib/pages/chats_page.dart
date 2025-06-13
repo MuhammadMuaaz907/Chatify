@@ -26,6 +26,8 @@ class _ChatsPageState extends State<ChatsPage> {
   late NavigationService _navigation;
   late ChatsPageProvider _pageProvider;
 
+  Chat? _selectedChat; // Track selected chat
+
   @override
   Widget build(BuildContext context) {
     _deviceHeight = MediaQuery.of(context).size.height;
@@ -65,9 +67,25 @@ class _ChatsPageState extends State<ChatsPage> {
                 children: [
                   TopBar(
                     'Chats',
-                    primaryAction: IconButton(
-                      icon: Icon(Icons.logout, color: Colors.white),
-                      onPressed: () => _auth.logout(),
+                    primaryAction: Row(
+                      children: [
+                        if (_selectedChat != null)
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.white),
+                            onPressed: () async {
+                              if (_selectedChat != null) {
+                                await _pageProvider.deleteChat(_selectedChat!.uid);
+                                setState(() {
+                                  _selectedChat = null; // Clear selection after deletion
+                                });
+                              }
+                            },
+                          ),
+                        IconButton(
+                          icon: Icon(Icons.logout, color: Colors.white),
+                          onPressed: () => _auth.logout(),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(child: _chatsList()),
@@ -86,17 +104,17 @@ class _ChatsPageState extends State<ChatsPage> {
     return _chats != null
         ? _chats.isNotEmpty
             ? ListView.builder(
-              itemCount: _chats.length,
-              itemBuilder: (BuildContext _context, int _index) {
-                return _chatTile(_chats[_index]);
-              },
-            )
+                itemCount: _chats.length,
+                itemBuilder: (BuildContext _context, int _index) {
+                  return _chatTile(_chats[_index]);
+                },
+              )
             : Center(
-              child: Text(
-                "No chats found",
-                style: TextStyle(color: Colors.white70, fontSize: 18),
-              ),
-            )
+                child: Text(
+                  "No chats found",
+                  style: TextStyle(color: Colors.white70, fontSize: 18),
+                ),
+              )
         : Center(child: CircularProgressIndicator(color: Colors.white));
   }
 
@@ -109,26 +127,31 @@ class _ChatsPageState extends State<ChatsPage> {
                 ? "Media Attachment"
                 : _chat.messages.first.content
             : "No messages yet";
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      color: Colors.white.withOpacity(0.9),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.teal,
-          child: Text(_chat.title()[0], style: TextStyle(color: Colors.white)),
+    return GestureDetector(
+      onLongPress: () {
+        setState(() {
+          _selectedChat = _selectedChat == _chat ? null : _chat; // Toggle selection
+        });
+      },
+      child: Card(
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        color: _selectedChat == _chat ? Colors.teal.withOpacity(0.3) : Colors.white.withOpacity(0.9),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Colors.teal,
+            child: Text(_chat.title()[0], style: TextStyle(color: Colors.white)),
+          ),
+          title: Text(
+            _chat.title(),
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(_subtitleText, style: TextStyle(color: Colors.black54)),
+          trailing:
+              _isActive ? Icon(Icons.circle, size: 12, color: Colors.green) : null,
+          onTap: () => _navigation.navigateToPage(ChatPage(chat: _chat)),
         ),
-        title: Text(
-          _chat.title(),
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(_subtitleText, style: TextStyle(color: Colors.black54)),
-        trailing:
-            _isActive
-                ? Icon(Icons.circle, size: 12, color: Colors.green)
-                : null,
-        onTap: () => _navigation.navigateToPage(ChatPage(chat: _chat)),
       ),
     );
   }

@@ -62,12 +62,12 @@ class _ChatPageState extends State<ChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(widget.chat.title(), style: TextStyle(color: Colors.white)),
-                if (widget.chat.group) // Show members' names only for group chats
+                if (widget.chat.group)
                   Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
                       widget.chat.members
-                          .where((member) => member.uid != _auth.user.uid) // Exclude current user
+                          .where((member) => member.uid != _auth.user?.uid) // Exclude current user
                           .map((member) => member.name)
                           .join(", "),
                       style: TextStyle(
@@ -84,13 +84,13 @@ class _ChatPageState extends State<ChatPage> {
               onPressed: () => _pageProvider.goBack(),
             ),
             actions: [
-              // Show unfriend icon only for one-on-one chats
               if (!widget.chat.group)
                 IconButton(
                   icon: Icon(Icons.person_remove, color: Colors.white),
                   onPressed: () async {
+                    if (_auth.user?.uid == null) return;
                     String friendId = widget.chat.members
-                        .firstWhere((member) => member.uid != _auth.user.uid)
+                        .firstWhere((member) => member.uid != _auth.user!.uid)
                         .uid;
                     bool success = await _pageProvider.unfriendUser(friendId);
                     if (success) {
@@ -129,7 +129,7 @@ class _ChatPageState extends State<ChatPage> {
           itemCount: _pageProvider.messages!.length,
           itemBuilder: (BuildContext _context, int _index) {
             ChatMessage _message = _pageProvider.messages![_index];
-            bool _isOwnMessage = _message.senderID == _auth.user.uid;
+            bool _isOwnMessage = _message.senderID == _auth.user?.uid;
             String senderName = widget.chat.members
                 .firstWhere(
                   (member) => member.uid == _message.senderID,

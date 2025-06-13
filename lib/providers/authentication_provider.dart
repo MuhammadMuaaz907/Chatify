@@ -1,4 +1,3 @@
-//package
 import 'package:chatify_app/models/chat_user.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +16,7 @@ class AuthenticationProvider extends ChangeNotifier {
   late final NavigationService _navigationService;
   late final DatabaseService _databaseService;
 
-  late ChatUser user;
+  ChatUser? user; // Nullable now
 
   AuthenticationProvider() {
     _auth = FirebaseAuth.instance;
@@ -30,9 +29,7 @@ class AuthenticationProvider extends ChangeNotifier {
         _databaseService.getUser(_user.uid).then((_snapshot) {
           if (_snapshot.exists && _snapshot.data() != null) {
             Map<String, dynamic> _userData = _snapshot.data()! as Map<String, dynamic>;
-            
             print("User JSON: $_userData"); // Debugging
-            
             user = ChatUser.fromJSON({
               "uid": _user.uid,
               "name": _userData["name"] ?? "Guest",
@@ -47,8 +44,10 @@ class AuthenticationProvider extends ChangeNotifier {
           }
         }).catchError((error) {
           print("Error fetching user data: $error");
+          _navigationService.removeAndNavigateToRoute('/login');
         });
       } else {
+        user = null;
         _navigationService.removeAndNavigateToRoute('/login');
       }
     });

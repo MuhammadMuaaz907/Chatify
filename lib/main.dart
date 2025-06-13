@@ -8,7 +8,10 @@ import './pages/login_page.dart';
 import './pages/register_page.dart';
 import './pages/home_page.dart';
 import './pages/friend_requests_page.dart';
+import './pages/users_page.dart';
+import './pages/chats_page.dart';
 import './providers/authentication_provider.dart';
+import './providers/users_page_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +38,11 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider<AuthenticationProvider>(
           create: (BuildContext _context) => AuthenticationProvider(),
         ),
+        ChangeNotifierProvider<UsersPageProvider>(
+          create: (BuildContext _context) => UsersPageProvider(
+            Provider.of<AuthenticationProvider>(_context, listen: false),
+          ),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -60,6 +68,8 @@ class MainApp extends StatelessWidget {
           '/register': (BuildContext _context) => RegisterPage(),
           '/home': (BuildContext _context) => HomePage(),
           '/friendRequests': (context) => FriendRequestsPage(),
+          '/users': (BuildContext _context) => UsersPage(),
+          '/chats': (BuildContext _context) => ChatsPage(),
         },
       ),
     );
